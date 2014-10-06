@@ -100,7 +100,7 @@ module j1(
         5'b01010: _st0 = st0 - 1;
         5'b01011: _st0 = rst0;
         5'b01100: _st0 = mem_din;
-        5'b01101: _st0 = up;
+        5'b01101: _st0 = 0;
         5'b01111: _st0 = {16{(st1 < st0)}};
         
         5'b10001: _st0 = st1 << st0[3:0];
@@ -187,11 +187,5 @@ module j1(
   end
 
   wire io_wr = !reboot & is_alu & func_iow;
-  always @(negedge resetq or posedge clk) begin
-    if (!resetq)
-      down <= 0;
-    else if (io_wr)
-      down <= st1;
-  end
 
 endmodule
