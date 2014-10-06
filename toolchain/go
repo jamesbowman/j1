@@ -1,0 +1,2 @@
+gforth cross.fs basewords.fs demo0.fs
+gforth cross.fs basewords.fs demo1.fs
