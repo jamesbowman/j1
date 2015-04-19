@@ -29,6 +29,7 @@
 *.scr
 *.srp
 *.xml
+*.html
 _impactbatch.log
 netlist.lst
 smartguide.ncd

@@ -15,19 +15,16 @@ module j1(
    output wire [8:0] code_addr,
    input  wire [15:0] insn
    );
-  parameter FIRMWARE = "build/firmware/";
-  parameter INIT = "demo0.hex";
-
   reg [3:0] dsp;      // Data stack pointer
   reg [3:0] dspN;
   reg [`WIDTH-1:0] st0;     // Top of data stack
   reg [`WIDTH-1:0] st0N;
-  wire dstkW;         // D stack write
+  reg dstkW;         // D stack write
 
   reg [8:0] pc, pcN;      
   reg [3:0] rsp, rspN;
   reg rstkW;          // R stack write
-  reg [`WIDTH-1:0] rstkD;   // R stack write value
+  wire [`WIDTH-1:0] rstkD;   // R stack write value
   reg reboot = 1;
   wire [8:0] pc_plus_1 = pc + 1;
 
@@ -68,59 +65,42 @@ module j1(
     endcase
   end
 
-  wire is_alu = (insn[15:13] == 3'b011);
-  wire is_lit = (insn[15]);
-
   wire func_T_N =   (insn[6:4] == 1);
   wire func_T_R =   (insn[6:4] == 2);
   wire func_write = (insn[6:4] == 3);
   wire func_iow =   (insn[6:4] == 4);
 
+  wire is_alu = (insn[15:13] == 3'b011);
   assign mem_wr = !reboot & is_alu & func_write;
   assign dout = st1;
   assign io_wr = !reboot & is_alu & func_iow;
 
-  assign dstkW = is_lit | (is_alu & func_T_N);
+  assign rstkD = (insn[13] == 1'b0) ? {6'b000000, pc_plus_1, 1'b0} : st0;
 
-  wire [1:0] dd = insn[1:0];  // D stack delta
-  wire [1:0] rd = insn[3:2];  // R stack delta
-
+  reg [3:0] dspI, rspI;
   always @*
   begin
-    if (is_lit) begin                       // literal
-      dspN = dsp + 1;
-      rspN = rsp;
-      rstkW = 0;
-      rstkD = {`WIDTH{1'bx}};
-    end else if (is_alu) begin             // ALU
-      dspN = dsp + {dd[1], dd[1], dd};
-      rspN = rsp + {rd[1], rd[1], rd};
-      rstkW = func_T_R;
-      rstkD = st0;
-    end else begin                          // jump/call
-      // predicated jump is like DROP
-      if (insn[15:13] == 3'b001) begin
-        dspN = dsp - 1;
-      end else begin
-        dspN = dsp;
-      end
-      if (insn[15:13] == 3'b010) begin // call
-        rspN = rsp + 1;
-        rstkW = 1;
-        rstkD = {7'b000000, pc_plus_1};
-      end else begin
-        rspN = rsp;
-        rstkW = 0;
-        rstkD = {`WIDTH{1'bx}};
-      end
-    end
+    casez ({insn[15:13]})
+    3'b1??:   {dstkW, dspI} = {1'b1,      4'b0001};
+    3'b001:   {dstkW, dspI} = {1'b0,      4'b1111};
+    3'b011:   {dstkW, dspI} = {func_T_N,  {insn[1], insn[1], insn[1:0]}};
+    default:  {dstkW, dspI} = {1'b0,      4'b0000};
+    endcase
+    dspN = dsp + dspI;
+
+    casez ({insn[15:13]})
+    3'b010:   {rstkW, rspI} = {1'b1,      4'b0001};
+    3'b011:   {rstkW, rspI} = {func_T_R,  {insn[3], insn[3], insn[3:2]}};
+    default:  {rstkW, rspI} = {1'b0,      4'b0000};
+    endcase
+    rspN = rsp + rspI;
 
     casez ({reboot, insn[15:13], insn[7], |st0})
     6'b1_???_?_?:   pcN = 0;
     6'b0_000_?_?,
     6'b0_010_?_?,
     6'b0_001_?_0:   pcN = insn[8:0];
-    6'b0_011_1_?:   pcN = rst0[8:0];
+    6'b0_011_1_?:   pcN = rst0[9:1];
     default:        pcN = pc_plus_1;
     endcase
 
@@ -129,17 +109,11 @@ module j1(
   always @(negedge resetq or posedge clk)
   begin
     if (!resetq) begin
-      reboot <= 1;
-      pc <= 0;
-      dsp <= 0;
-      st0 <= 0;
-      rsp <= 0;
+      reboot <= 1'b1;
+      { pc, dsp, st0, rsp } <= 0;
     end else begin
       reboot <= 0;
-      pc <= pcN;
-      dsp <= dspN;
-      st0 <= st0N;
-      rsp <= rspN;
+      { pc, dsp, st0, rsp } <= { pcN, dspN, st0N, rspN };
     end
   end
 endmodule

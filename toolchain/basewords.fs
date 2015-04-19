@@ -10,13 +10,12 @@
 : N==T      h# 0700 ;
 : N<T       h# 0800 ;
 : N>>T      h# 0900 ;
-: T-1       h# 0a00 ;
+: N<<T      h# 0a00 ;
 : rT        h# 0b00 ;
 : [T]       h# 0c00 ;
 : io[T]     h# 0d00 ;
-: sinT      h# 0e00 ;
+: status    h# 0e00 ;
 : Nu<T      h# 0f00 ;
-: N<<T      h# 1100 ;
 
 : T->N      h# 0010 or ;
 : T->R      h# 0020 or ;
@@ -43,7 +42,6 @@
 :: and       T&N                 d-1 alu ;
 :: or        T|N                 d-1 alu ;
 :: invert    ~T                      alu ;
-:: sin       sinT                    alu ;
 :: =         N==T                d-1 alu ;
 :: <         N<T                 d-1 alu ;
 :: u<        Nu<T                d-1 alu ;
@@ -63,7 +61,7 @@
              N                   d-1 alu ;
 :: rshift    N>>T                d-1 alu ;
 :: lshift    N<<T                d-1 alu ;
-:: 1-        T-1                     alu ;
+:: depth     status T->N          d+1 alu ;
 :: exit      T  RET              r-1 alu ;
 
 \ Elided words
