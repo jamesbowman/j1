@@ -8,6 +8,7 @@ module j1(
    output wire [`WIDTH-1:0] mem_addr,
    output wire mem_wr,
    output wire [`WIDTH-1:0] dout,
+   input  wire [`WIDTH-1:0] mem_din,
 
    input  wire [`WIDTH-1:0] io_din,
 
@@ -32,7 +33,6 @@ module j1(
 
   assign mem_addr = st0N;
   assign code_addr = pcN;
-  wire [`WIDTH-1:0] mem_din = 16'h5678;
 
   // The D and R stacks
   wire [`WIDTH-1:0] st1;
@@ -48,23 +48,22 @@ module j1(
       8'b000_?????: st0N = st0;                     // jump
       8'b010_?????: st0N = st0;                     // call
       8'b001_?????: st0N = st1;                     // conditional jump
-      8'b011_00000: st0N = st0;                     // ALU operations...
-      8'b011_00001: st0N = st1;
-      8'b011_00010: st0N = st0 + st1;
-      8'b011_00011: st0N = st0 & st1;
-      8'b011_00100: st0N = st0 | st1;
-      8'b011_00101: st0N = st0 ^ st1;
-      8'b011_00110: st0N = ~st0;
-      8'b011_00111: st0N = {16{(st1 == st0)}};
-      8'b011_01000: st0N = {16{($signed(st1) < $signed(st0))}};
-      8'b011_01001: st0N = st1 >> st0[3:0];
-      8'b011_01010: st0N = st0 - 1;
-      8'b011_01011: st0N = rst0;
-      8'b011_01100: st0N = mem_din;
-      8'b011_01101: st0N = io_din;
-      8'b011_01110: st0N = {8'd0, rsp, dsp};
-      8'b011_01111: st0N = {16{(st1 < st0)}};
-      8'b011_10001: st0N = st1 << st0[3:0];
+      8'b011_?0000: st0N = st0;                     // ALU operations...
+      8'b011_?0001: st0N = st1;
+      8'b011_?0010: st0N = st0 + st1;
+      8'b011_?0011: st0N = st0 & st1;
+      8'b011_?0100: st0N = st0 | st1;
+      8'b011_?0101: st0N = st0 ^ st1;
+      8'b011_?0110: st0N = ~st0;
+      8'b011_?0111: st0N = {16{(st1 == st0)}};
+      8'b011_?1000: st0N = {16{($signed(st1) < $signed(st0))}};
+      8'b011_?1001: st0N = st1 >> st0[3:0];
+      8'b011_?1010: st0N = st1 << st0[3:0];
+      8'b011_?1011: st0N = rst0;
+      8'b011_?1100: st0N = mem_din;
+      8'b011_?1101: st0N = io_din;
+      8'b011_?1110: st0N = {8'd0, rsp, dsp};
+      8'b011_?1111: st0N = {16{(st1 < st0)}};
       default: st0N = {`WIDTH{1'bx}};
     endcase
   end
@@ -115,19 +114,6 @@ module j1(
         rstkD = {`WIDTH{1'bx}};
       end
     end
-
-    /*
-    if (reboot)
-      pcN = 0;
-    else if ((insn[15:13] == 3'b000) |
-            ((insn[15:13] == 3'b001) & (|st0 == 0)) |
-            (insn[15:13] == 3'b010))
-      pcN = insn[8:0];
-    else if (is_alu & insn[7])
-      pcN = rst0[8:0];
-    else
-      pcN = pc_plus_1;
-    */
 
     casez ({reboot, insn[15:13], insn[7], |st0})
     6'b1_???_?_?:   pcN = 0;

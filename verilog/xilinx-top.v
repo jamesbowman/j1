@@ -4,29 +4,34 @@
 module ram16k(
   input wire        clk,
 
-  input wire        write,
-  input wire[9:0]  waddr,
-  input wire[15:0]   din,
+  input  wire[15:0] a_addr,
+  output wire[15:0] a_q,
+  input  wire[15:0] a_d,
+  input  wire       a_wr,
 
-  input  wire[13:0] raddr,
-  output wire[15:0]  dout);
+  input  wire[13:0] b_addr,
+  output wire[15:0] b_q);
 
   //synthesis attribute ram_style of mem is block
   reg    [15:0]  mem[0:511]; //pragma attribute mem ram_block TRUE
-  reg    [9:0]  raddr_reg;
 
   initial begin
     $readmemh("../build/firmware/demo0.hex", mem);
   end
 
   always @ (posedge clk)
-    if (write)
-      mem[waddr]  <= din;  
+    if (a_wr)
+      mem[a_addr] <= a_d;  
 
+  reg    [15:0]  a_addr_;
   always @ (posedge clk)
-    raddr_reg  <= raddr;
+    a_addr_  <= a_addr;
+  assign a_q = mem[a_addr_[8:0]];
 
-  assign dout = mem[{1'b0, raddr_reg}];
+  reg    [9:0]  raddr_reg;
+  always @ (posedge clk)
+    raddr_reg  <= b_addr;
+  assign b_q = mem[{1'b0, raddr_reg}];
 endmodule
 
 module top(
@@ -38,49 +43,24 @@ module top(
   );
   localparam MHZ = 200;
 
-  // wire fclk = CLK;
-
-//  // Convert 25MHz input clock to 65MHz by multiplying by 13/5.
-//  wire ck_fb, fclk;
-//  DCM #(
-//     .CLKFX_MULTIPLY(2),
-//     .CLKFX_DIVIDE(2),
-//     .DFS_FREQUENCY_MODE("LOW"),
-//     .DUTY_CYCLE_CORRECTION("TRUE"),
-//     .STARTUP_WAIT("TRUE")
-//  ) DCM_inst (
-//     .CLKIN(CLK),     // Clock input (from IBUFG, BUFG or DCM)
-//     .CLK0(ck_fb),    
-//     .CLKFX(fclk), 
-//     .CLKFB(ck_fb),    // DCM clock feedback
-//     .RST(0)
-//  );
-
   wire fclk;
 
-DCM_CLKGEN #(
-.CLKFX_MD_MAX(0.0), // Specify maximum M/D ratio for timing anlysis
-.CLKFX_DIVIDE(32), // Divide value - D - (1-256)
-.CLKFX_MULTIPLY(MHZ), // Multiply value - M - (2-256)
-.CLKIN_PERIOD(31.25), // Input clock period specified in nS
-.SPREAD_SPECTRUM("NONE"), // Spread Spectrum mode "NONE", "CENTER_LOW_SPREAD", "CENTER_HIGH_SPREAD",
-// "VIDEO_LINK_M0", "VIDEO_LINK_M1" or "VIDEO_LINK_M2"
-.STARTUP_WAIT("FALSE") // Delay config DONE until DCM_CLKGEN LOCKED (TRUE/FALSE)
-)
-DCM_CLKGEN_inst (
-.CLKFX(fclk), // 1-bit output: Generated clock output
-// .CLKFX180(CLKFX180), // 1-bit output: Generated clock output 180 degree out of phase from CLKFX.
-// .CLKFXDV(CLKFXDV), // 1-bit output: Divided clock output
-// .LOCKED(LOCKED), // 1-bit output: Locked output
-// .PROGDONE(PROGDONE), // 1-bit output: Active high output to indicate the successful re-programming
-// .STATUS(STATUS), // 2-bit output: DCM_CLKGEN status
-.CLKIN(CLK), // 1-bit input: Input clock
-.FREEZEDCM(0), // 1-bit input: Prevents frequency adjustments to input clock
-.PROGCLK(0), // 1-bit input: Clock input for M/D reconfiguration
-.PROGDATA(0), // 1-bit input: Serial data input for M/D reconfiguration
-.PROGEN(0), // 1-bit input: Active high program enable
-.RST(0) // 1-bit input: Reset input pin
-);
+  DCM_CLKGEN #(
+  .CLKFX_MD_MAX(0.0),     // Specify maximum M/D ratio for timing anlysis
+  .CLKFX_DIVIDE(32),      // Divide value - D - (1-256)
+  .CLKFX_MULTIPLY(MHZ),   // Multiply value - M - (2-256)
+  .CLKIN_PERIOD(31.25),   // Input clock period specified in nS
+  .STARTUP_WAIT("FALSE")  // Delay config DONE until DCM_CLKGEN LOCKED (TRUE/FALSE)
+  )
+  DCM_CLKGEN_inst (
+  .CLKFX(fclk),           // 1-bit output: Generated clock output
+  .CLKIN(CLK),            // 1-bit input: Input clock
+  .FREEZEDCM(0),          // 1-bit input: Prevents frequency adjustments to input clock
+  .PROGCLK(0),            // 1-bit input: Clock input for M/D reconfiguration
+  .PROGDATA(0),           // 1-bit input: Serial data input for M/D reconfiguration
+  .PROGEN(0),             // 1-bit input: Active high program enable
+  .RST(0)                 // 1-bit input: Reset input pin
+  );
 
   reg [25:0] counter;
   always @(posedge fclk)
@@ -107,19 +87,8 @@ DCM_CLKGEN_inst (
      .tx_data(dout_[7:0]),
      .rx_data(uart0_data));
 
-  // assign vga_red = 0;
-  // assign vga_green = 0;
-  // assign vga_blue = 0;
-  // assign vga_hsync_n = 0;
-  // assign vga_vsync_n = 0;
-  // // assign MISO = 0;
-  // assign AUDIOL = 0;
-  // assign AUDIOR = 0;
-  // assign flashMOSI = 0;
-  // assign flashSCK = 0;
-  // assign flashSSEL = 0;
-
   wire [15:0] mem_addr;
+  wire [15:0] mem_din;
   wire mem_wr;
   wire [15:0] dout;
 
@@ -139,6 +108,7 @@ DCM_CLKGEN_inst (
      .io_wr(io_wr),
      .mem_addr(mem_addr),
      .mem_wr(mem_wr),
+     .mem_din(mem_din),
      .dout(dout),
      .io_din({uart0_data, 5'd0, uart0_valid, uart0_busy, DUO_SW1}),
 
@@ -146,8 +116,13 @@ DCM_CLKGEN_inst (
      .insn(insn)
      );
 
-  ram16k ram(.clk(fclk), .write(0), .waddr(0),
-    .raddr(code_addr), .din(16'habcf), .dout(insn));
+  ram16k ram(.clk(fclk),
+             .a_addr(mem_addr),
+             .a_q(mem_din),
+             .a_wr(mem_wr),
+             .a_d(dout),
+             .b_addr(code_addr),
+             .b_q(insn));
 
   reg io_wr_;
   reg [15:0] mem_addr_, dout_;
