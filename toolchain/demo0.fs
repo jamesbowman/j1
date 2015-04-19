@@ -1,6 +1,7 @@
 : 1+        d# 1 + ;
 : 0=        d# 0 = ;
 : 0<>       0= invert ;
+: cell+     d# 2 + ;
 
 : key?
     d# 0 io@
@@ -13,7 +14,7 @@
         key?
     until
     d# 0 io@ d# 8 rshift
-    d# 0 d# 1 io!
+    d# 0 d# 2 io!
 ;
 
 : emit
@@ -83,15 +84,15 @@
     cr cr cr cr
     d# 64 emit h# abcd hex4
 
-    h# 55aa h# c5 !
+    h# 55aa h# 18a !
 
-    d# 0 begin
+    d# 360 begin
         cr
         dup hex4
         space
         dup @ hex4
-        1+
-        dup d# 200 =
+        cell+
+        dup d# 400 =
     until
     cr cr
 

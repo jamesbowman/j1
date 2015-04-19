@@ -12,7 +12,7 @@ module j1(
 
    input  wire [`WIDTH-1:0] io_din,
 
-   output wire [8:0] code_addr,
+   output wire [12:0] code_addr,
    input  wire [15:0] insn
    );
   reg [3:0] dsp;      // Data stack pointer
@@ -21,15 +21,15 @@ module j1(
   reg [`WIDTH-1:0] st0N;
   reg dstkW;         // D stack write
 
-  reg [8:0] pc, pcN;      
+  reg [12:0] pc, pcN;      
   reg [3:0] rsp, rspN;
   reg rstkW;          // R stack write
   wire [`WIDTH-1:0] rstkD;   // R stack write value
   reg reboot = 1;
-  wire [8:0] pc_plus_1 = pc + 1;
+  wire [12:0] pc_plus_1 = pc + 1;
 
   assign mem_addr = st0N;
-  assign code_addr = pcN;
+  assign code_addr = {pcN};
 
   // The D and R stacks
   wire [`WIDTH-1:0] st1;
@@ -99,7 +99,7 @@ module j1(
     6'b1_???_?_?:   pcN = 0;
     6'b0_000_?_?,
     6'b0_010_?_?,
-    6'b0_001_?_0:   pcN = insn[8:0];
+    6'b0_001_?_0:   pcN = insn[12:0];
     6'b0_011_1_?:   pcN = rst0[9:1];
     default:        pcN = pc_plus_1;
     endcase

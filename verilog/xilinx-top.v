@@ -13,25 +13,24 @@ module ram16k(
   output wire[15:0] b_q);
 
   //synthesis attribute ram_style of mem is block
-  reg    [15:0]  mem[0:511]; //pragma attribute mem ram_block TRUE
-
+  reg    [15:0]  mem[0:1023]; //pragma attribute mem ram_block TRUE
   initial begin
-    $readmemh("../build/firmware/demo0.hex", mem);
+    $readmemh("../build/firmware/demo0.hex", mem, 0, 511);
   end
 
   always @ (posedge clk)
     if (a_wr)
-      mem[a_addr] <= a_d;  
+      mem[a_addr[10:1]] <= a_d;  
 
   reg    [15:0]  a_addr_;
   always @ (posedge clk)
     a_addr_  <= a_addr;
-  assign a_q = mem[a_addr_[8:0]];
+  assign a_q = mem[a_addr_[10:1]];
 
-  reg    [9:0]  raddr_reg;
+  reg    [13:0]  raddr_reg;
   always @ (posedge clk)
     raddr_reg  <= b_addr;
-  assign b_q = mem[{1'b0, raddr_reg}];
+  assign b_q = mem[raddr_reg[9:0]];
 endmodule
 
 module top(
@@ -92,7 +91,7 @@ module top(
   wire mem_wr;
   wire [15:0] dout;
 
-  wire [8:0] code_addr;
+  wire [12:0] code_addr;
   wire [15:0] insn;
 
   wire io_wr;
@@ -121,7 +120,7 @@ module top(
              .a_q(mem_din),
              .a_wr(mem_wr),
              .a_d(dout),
-             .b_addr(code_addr),
+             .b_addr(code_addr[8:0]),
              .b_q(insn));
 
   reg io_wr_;
@@ -130,6 +129,6 @@ module top(
     {io_wr_, mem_addr_, dout_} <= {io_wr, mem_addr, dout};
 
   assign uart0_wr = io_wr_ & (mem_addr_ == 16'h0000);
-  assign uart0_rd = io_wr_ & (mem_addr_ == 16'h0001);
+  assign uart0_rd = io_wr_ & (mem_addr_ == 16'h0002);
 
 endmodule

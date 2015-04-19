@@ -1,7 +1,18 @@
-ADDRESS_SPACE j1 COMBINED [0x00000000:0x000007ff]
-   ADDRESS_RANGE RAMB16
-     BUS_BLOCK
-       ram/Mram_mem [15:0]; 
-     END_BUS_BLOCK;
-   END_ADDRESS_RANGE;
+// BMM LOC annotation file.
+//
+// Release 14.6 -  P.20131013, build 3.0.10 Apr 3, 2013
+// Copyright (c) 1995-2015 Xilinx, Inc.  All rights reserved.
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Address space 'j1' 0x00000000:0x000007FF (2 KBytes).
+//
+///////////////////////////////////////////////////////////////////////////////
+
+ADDRESS_SPACE j1 RAMB16 [0x00000000:0x000007FF]
+    BUS_BLOCK
+        ram/Mram_mem RAMB16 [15:0] [0:1023] PLACED = X0Y14;
+    END_BUS_BLOCK;
 END_ADDRESS_SPACE;
+
