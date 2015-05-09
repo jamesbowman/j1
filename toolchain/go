@@ -1,3 +1,4 @@
 set -e
 gforth cross.fs basewords.fs demo0.fs
 gforth cross.fs basewords.fs demo1.fs
+python dump.py ../build/firmware/demo0.hex

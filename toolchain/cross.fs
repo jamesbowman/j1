@@ -73,6 +73,21 @@ warnings off
     >in @ >r bl word count r> >in !
 ;
 
+variable link 0 link !
+
+:: header
+    talign there
+    cr ." link is " link @ .
+    link @ .s t,
+    link !
+    bl parse
+    dup tc,
+    bounds do
+        i c@ tc,
+    loop
+    talign
+;
+
 :: :
     hex
     codeptr s>d
@@ -83,6 +98,20 @@ warnings off
     create  codeptr ,
     does>   @ scall
 ;
+
+:: :noname
+;
+
+:: ,
+    t,
+;
+
+:: allot
+    0 ?do
+        0 tc,
+    loop
+;
+
 : shortcut ( orig -- f ) \ insn @orig precedes ;. Shortcut it.
     \ call becomes jump
     dup t@ h# e000 and h# 4000 = if
@@ -117,12 +146,19 @@ warnings off
     does>   @ literal
 ;
 
+:: create
+    create there ,
+    does>   @ literal
+;
+
 ( Switching between target and meta          JCB 19:08 05/02/12)
 
 : target    only target-wordlist add-order definitions ;
 : ]         target ;
 :: meta     forth definitions ;
 :: [        forth definitions ;
+
+: t'        bl parse target-wordlist search-wordlist 0= throw >body @ ;
 
 ( eforth's way of handling constants         JCB 13:12 09/03/10)
 
@@ -201,10 +237,6 @@ warnings on
     resolve
 ;
 
-:: for      s" d# 0 >r" evaluate there ;
-:: next     s" loop" evaluate 2/ 0branch s" rdrop" evaluate ;
-:: i        s" r@" evaluate ;
-
 2 org
 : .trim ( a-addr u ) \ shorten string until it ends with '.'
     begin
@@ -241,7 +273,7 @@ decimal
     s" hex" out-suffix to file
 
     hex
-    512 0 do
+    1024 0 do
         tflash i 2* + w@
         s>d <# # # # # #> file write-line throw
     loop

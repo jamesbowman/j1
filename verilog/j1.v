@@ -32,8 +32,7 @@ module j1(
   assign code_addr = {pcN};
 
   // The D and R stacks
-  wire [`WIDTH-1:0] st1;
-  wire [`WIDTH-1:0] rst0;
+  wire [`WIDTH-1:0] st1, rst0;
   stack dstack(.clk(clk), .resetq(resetq), .ra(dsp), .rd(st1), .we(dstkW), .wa(dspN), .wd(st0));
   stack rstack(.clk(clk), .resetq(resetq), .ra(rsp), .rd(rst0), .we(rstkW), .wa(rspN), .wd(rstkD));
 
@@ -75,7 +74,7 @@ module j1(
   assign dout = st1;
   assign io_wr = !reboot & is_alu & func_iow;
 
-  assign rstkD = (insn[13] == 1'b0) ? {6'b000000, pc_plus_1, 1'b0} : st0;
+  assign rstkD = (insn[13] == 1'b0) ? {2'b00, pc_plus_1, 1'b0} : st0;
 
   reg [3:0] dspI, rspI;
   always @*
@@ -100,10 +99,9 @@ module j1(
     6'b0_000_?_?,
     6'b0_010_?_?,
     6'b0_001_?_0:   pcN = insn[12:0];
-    6'b0_011_1_?:   pcN = rst0[9:1];
+    6'b0_011_1_?:   pcN = rst0[13:1];
     default:        pcN = pc_plus_1;
     endcase
-
   end
 
   always @(negedge resetq or posedge clk)

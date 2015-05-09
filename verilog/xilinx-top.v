@@ -15,7 +15,7 @@ module ram16k(
   //synthesis attribute ram_style of mem is block
   reg    [15:0]  mem[0:1023]; //pragma attribute mem ram_block TRUE
   initial begin
-    $readmemh("../build/firmware/demo0.hex", mem, 0, 511);
+    $readmemh("../build/firmware/demo0.hex", mem);
   end
 
   always @ (posedge clk)
@@ -120,7 +120,7 @@ module top(
              .a_q(mem_din),
              .a_wr(mem_wr),
              .a_d(dout),
-             .b_addr(code_addr[8:0]),
+             .b_addr(code_addr[9:0]),
              .b_q(insn));
 
   reg io_wr_;

@@ -61,7 +61,7 @@
              N                   d-1 alu ;
 :: rshift    N>>T                d-1 alu ;
 :: lshift    N<<T                d-1 alu ;
-:: depth     status T->N          d+1 alu ;
+:: depths    status T->N         d+1 alu ;
 :: exit      T  RET              r-1 alu ;
 
 \ Elided words

@@ -103,7 +103,7 @@ module rxuart(
 
   wire idle = &bitcount;
   wire sample;
-  reg [2:0] hh;
+  reg [2:0] hh = 3'b111;
   wire [2:0] hhN = {hh[1:0], uart_rx};
   wire startbit = idle & (hhN[2:1] == 2'b10);
   wire [7:0] shifterN = sample ? {hh[1], shifter[7:1]} : shifter;
@@ -135,7 +135,7 @@ module rxuart(
   always @(negedge resetq or posedge clk)
   begin
     if (!resetq) begin
-      hh <= 3'b000;
+      hh <= 3'b111;
       bitcount <= 5'b11111;
       shifter <= 0;
     end else begin

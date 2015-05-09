@@ -1,14 +1,23 @@
-: 1+        d# 1 + ;
-: 0=        d# 0 = ;
-: 0<>       0= invert ;
-: cell+     d# 2 + ;
+header 1+       : 1+        d# 1 + ;
+header 1-       : 1-        d# -1 + ;
+header 0=       : 0=        d# 0 = ;
+header cell+    : cell+     d# 2 + ;
 
+header <>       : <>        = invert ; 
+header >        : >         swap < ; 
+header 0<       : 0<        d# 0 < ; 
+header 0>       : 0>        d# 0 > ;
+header 0<>      : 0<>       d# 0 <> ;
+header u>       : u>        swap u< ; 
+
+header key?
 : key?
     d# 0 io@
     d# 4 and
     0<>
 ;
 
+header key
 : key
     begin
         key?
@@ -17,6 +26,7 @@
     d# 0 d# 2 io!
 ;
 
+header emit
 : emit
     begin
         d# 0 io@
@@ -26,13 +36,20 @@
     h# 0 io!
 ;
 
+header cr
 : cr
     d# 13 emit
     d# 10 emit
 ;
 
+header space
 : space
     d# 32 emit
+;
+
+header bl
+: bl
+    d# 32
 ;
 
 : hex1
@@ -58,7 +75,8 @@
     dup d# 16 rshift hex4 hex4
 ;
 
-: . hex4 ;
+header .
+: . hex4 space ;
 
 : eol   ( u -- u' false | true )
     d# -1 +
@@ -68,6 +86,7 @@
     then
 ;
 
+header ms
 : ms
     begin
         d# 15000 begin
@@ -75,46 +94,254 @@
     eol until
 ;
 
+header true     : true   d# -1 ; 
+header rot      : rot   >r swap r> swap ; 
+header -rot     : -rot  swap >r swap r> ; 
+header tuck     : tuck  swap over ; 
+header 2drop    : 2drop drop drop ; 
+header ?dup     : ?dup  dup if dup then ;
+
+header 2dup     : 2dup  over over ; 
+header +!       : +!    tuck @ + swap ! ; 
+header 2swap    : 2swap rot >r rot r> ;
+
+header c@
+: c@
+    dup @ swap
+    d# 1 and d# 3 lshift rshift
+    d# 255 and
+;
+
+header c!
+: c! ( u c-addr -- )
+    dup>r d# 1 and if
+        d# 8 lshift
+        r@ @ h# 00ff and
+    else
+        h# 00ff and
+        r@ @ h# ff00 and
+    then
+    or r> !
+;
+
+header count
+: count
+    dup 1+ swap c@
+;
+
+
+: bounds ( a n -- a+n a )
+    over + swap
+;
+
+header type
+: type
+    bounds
+    begin
+        2dupxor
+    while
+        dup c@ emit
+        1+
+    repeat
+    2drop
+;
+
+create base $a ,
+create ll 0 ,
+create dp 0 ,
+create tib 80 allot
+
+header words : words
+    ll @
+    begin
+        dup
+    while
+        cr
+        dup .
+        dup cell+
+        count type
+        space
+        @
+    repeat
+    drop
+;
+
+header dump : dump ( addr u -- )
+    cr over hex4
+    begin  ( addr u )
+        ?dup
+    while
+        over c@ space hex2
+        1- swap 1+   ( u' addr' )
+        dup h# f and 0= if  ( next line? )
+            cr dup hex4
+        then
+        swap
+    repeat
+    drop
+;
+
+header negate   : negate    invert 1+ ; 
+header -        : -         negate + ; 
+header abs      : abs       dup 0< if negate then ; 
+header 2*       : 2*        d# 1 lshift ; 
+header 2/       : 2/        d# 1 rshift ; 
+header here     : here      dp @ ;
+header depth    : depth     depths h# f and ;
+
+: /string
+    dup >r - swap r> + swap
+; 
+
+header aligned
+: aligned
+    1+ h# -2 and
+; 
+
+: d+                              ( augend . addend . -- sum . ) 
+    rot + >r                      ( augend addend) 
+    over +                        ( augend sum) 
+    dup rot                       ( sum sum augend) 
+    u< if                         ( sum) 
+        r> 1+ 
+    else 
+        r> 
+    then                          ( sum . ) 
+; 
+: s>d dup 0< ;
+: m+
+    s>d d+
+;
+
+create scratch 0 ,
+
+header um*
+: um*  ( u1 u2 -- ud ) 
+    scratch ! 
+    d# 0. 
+    d# 16 begin
+        >r
+        2dup d+ 
+        rot dup 0< if 
+            2* -rot 
+            scratch @ d# 0 d+ 
+        else 
+            2* -rot 
+        then 
+        r> eol
+    until
+    rot drop 
+; 
+
+header accept
+: accept
+    drop dup
+    begin
+        key
+        dup h# 0a = if drop swap - exit then
+        dup h# 20 < if drop bl then
+        dup emit
+        over c! 1+
+    again
+;
+
+: snap
+    cr depth hex2 space
+    begin
+        depth
+    while
+        .
+    repeat
+    cr
+    [char] # emit
+    begin again
+;
+
+
+: digit? ( c -- u f )
+   dup h# 39 > h# 100 and +
+   dup h# 140 > h# 107 and - h# 30 -
+   dup base @ u<
+;
+
+: ud*      ( ud1 d2 -- ud3 ) \ 32*16->32 multiply
+    dup >r um* drop
+    swap r> um* rot +
+;
+
+: >number ( ud1 c-addr1 u1 -- ud2 c-addr2 u2 )
+    begin
+        dup
+    while
+        over c@ digit?
+        0= if drop exit then
+        >r 2swap base @ ud*
+        r> m+ 2swap
+        d# 1 /string
+    repeat
+;
+
+header fill
+: fill ( c-addr u char -- ) ( 6.1.1540 ) 
+  >r  bounds 
+  begin
+    2dupxor 
+  while
+    r@ over c! 1+ 
+  repeat
+  r> drop 2drop
+; 
+
+header erase
+: erase
+    d# 0 fill
+;
+
+header !        :noname     !        ;
+header +        :noname     +        ;
+header xor      :noname     xor      ;
+header and      :noname     and      ;
+header or       :noname     or       ;
+header invert   :noname     invert   ;
+header =        :noname     =        ;
+header <        :noname     <        ;
+header u<       :noname     u<       ;
+header swap     :noname     swap     ;
+header dup      :noname     dup      ;
+header drop     :noname     drop     ;
+header over     :noname     over     ;
+header nip      :noname     nip      ;
+header @        :noname     @        ;
+header io!      :noname     io!      ;
+header rshift   :noname     rshift   ;
+header lshift   :noname     lshift   ;
+\ 
+\ \ >r
+\ \ r>
+\ \ r@
+\ \ exit
+\ 
+
 : main
     d# 60 begin
         d# 1 ms
         [char] - emit
     eol until
 
-    cr cr cr cr
-    d# 64 emit h# abcd hex4
+    begin key? while key drop repeat
 
-    h# 55aa h# 18a !
-
-    d# 360 begin
+    begin
         cr
-        dup hex4
-        space
-        dup @ hex4
-        cell+
-        dup d# 400 =
-    until
-    cr cr
-
-    begin
-        key?
-    while
-        key drop
-    repeat
-
-    d# 0
-    begin
-        cr dup hex4
-        space d# 0 io@ hex4
-        d# 1000 ms
-        key? if
-            cr key hex4
-        then
-        1+
+        tib d# 30 accept >r
+        d# 0. tib r> >number
+        2drop hex4 space hex4
     again
 
-    begin
-        key hex4 cr
-    again
-    [char] # emit
+    snap
 ;
+
+meta
+    link @ t,
+    link @ t' ll t!
+    there  t' dp t!
+target
