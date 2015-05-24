@@ -18,15 +18,19 @@ int main(int argc, char **argv)
       exit(1);
     }
 
-    uint16_t ram[1024];
+    union {
+      uint32_t ram32[4096];
+      uint16_t ram16[8192];
+    };
+
     FILE *hex = fopen(argv[1], "r");
-    for (i = 0; i < 1024; i++) {
+    for (i = 0; i < 4096; i++) {
       unsigned int v;
       if (fscanf(hex, "%x\n", &v) != 1) {
         fprintf(stderr, "invalid hex value at line %d\n", i + 1);
         exit(1);
       }
-      ram[i] = v;
+      ram32[i] = v;
     }
 
     FILE *log = fopen("log", "w");
@@ -41,13 +45,13 @@ int main(int argc, char **argv)
       uint16_t a = top->mem_addr;
       uint16_t b = top->code_addr;
       if (top->mem_wr)
-        ram[(a & 2047) / 2] = top->dout;
+        ram32[(a & 16383) / 4] = top->dout;
       top->clk = 1;
       top->eval();
       t += 20;
 
-      top->mem_din = ram[(a & 2047) / 2];
-      top->insn = ram[b];
+      top->mem_din = ram32[(a & 16383) / 4];
+      top->insn = ram16[b];
       top->clk = 0;
       top->eval();
       t += 20;

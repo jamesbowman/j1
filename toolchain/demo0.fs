@@ -333,13 +333,24 @@ header lshift   :noname     lshift   ;
     \ words
 
     cr cr cr
-    h# 947 begin
+    h# 1947 begin
         cr dup hex8
         2*
         dup 0=
     until
     cr
 
+    cr d# 0 @ hex8
+    cr d# 4 @ hex8
+    cr h# 3fc0 @ hex8
+    h# 947 h# 3fc0 !
+    cr h# 3fc0 @ hex8
+    cr
+
+    begin
+        d# 0 io@ cr hex8
+        d# 100 ms
+    again
     begin again
 
     begin key? while key drop repeat
@@ -352,6 +363,41 @@ header lshift   :noname     lshift   ;
     again
 
     snap
+;
+
+meta
+    $3f80 org 
+target
+
+: b.key
+    begin
+        d# 0 io@
+        d# 4 and
+    until
+    d# 0 io@ d# 8 rshift
+    d# 0 d# 2 io!
+;
+
+: b.32
+    b.key
+    b.key d# 8 lshift or
+    b.key d# 16 lshift or
+    b.key d# 24 lshift or
+;
+
+meta
+    $3fc0 org 
+target
+
+: bootloader
+    b.32 d# 0
+    begin
+        2dupxor
+    while
+        b.32 over !
+        d# 4 +
+    repeat
+    d# 2 >r
 ;
 
 meta

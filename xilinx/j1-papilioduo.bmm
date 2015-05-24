@@ -10,8 +10,15 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-// ADDRESS_SPACE j1 RAMB16 [0x00000000:0x00000FFF]
+// ADDRESS_SPACE j1 RAMB16 [0xffff0000:0xffff3FFF]
 //     BUS_BLOCK
-//         ram/Mram_mem RAMB16 [15:0] [0:1023] PLACED = X0Y14;
+//         ram16k/mem7 RAMB16 [3:0] [0:4095];
+//         ram16k/mem6 RAMB16 [7:4] [0:4095];
+//         ram16k/mem5 RAMB16 [11:8] [0:4095];
+//         ram16k/mem4 RAMB16 [15:12] [0:4095];
+//         ram16k/mem3 RAMB16 [19:16] [0:4095];
+//         ram16k/mem2 RAMB16 [23:20] [0:4095];
+//         ram16k/mem1 RAMB16 [27:24] [0:4095];
+//         ram16k/mem0 RAMB16 [31:28] [0:4095];
 //     END_BUS_BLOCK;
 // END_ADDRESS_SPACE;

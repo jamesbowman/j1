@@ -1,36 +1,37 @@
 `default_nettype none
 
-// A 1024x16 RAM with one write port and one read port
+// A 16Kbyte RAM (4096x32) with one write port and one read port
 module ram16k(
   input wire        clk,
 
   input  wire[15:0] a_addr,
-  output wire[15:0] a_q,
-  input  wire[15:0] a_d,
+  output wire[31:0] a_q,
+  input  wire[31:0] a_d,
   input  wire       a_wr,
 
   input  wire[12:0] b_addr,
   output wire[15:0] b_q);
 
   //synthesis attribute ram_style of mem is block
-  reg    [15:0]  mem[0:8191]; //pragma attribute mem ram_block TRUE
+  reg    [31:0]  mem[0:4095]; //pragma attribute mem ram_block TRUE
   initial begin
     $readmemh("../build/firmware/demo0.hex", mem);
   end
 
   always @ (posedge clk)
     if (a_wr)
-      mem[a_addr[10:1]] <= a_d;  
+      mem[a_addr[13:2]] <= a_d;  
 
   reg    [15:0]  a_addr_;
   always @ (posedge clk)
     a_addr_  <= a_addr;
-  assign a_q = mem[a_addr_[13:1]];
+  assign a_q = mem[a_addr_[13:2]];
 
   reg    [12:0]  raddr_reg;
   always @ (posedge clk)
     raddr_reg  <= b_addr;
-  assign b_q = mem[raddr_reg];
+  wire [31:0] insn32 = mem[raddr_reg[12:1]];
+  assign b_q = raddr_reg[0] ? insn32[31:16] : insn32[15:0];
 endmodule
 
 module top(
@@ -38,7 +39,8 @@ module top(
   output wire DUO_LED,
   input  wire DUO_SW1,
   input  wire RXD,
-  output wire TXD
+  output wire TXD,
+  input  wire DTR
   );
   localparam MHZ = 40;
 
@@ -96,9 +98,7 @@ module top(
 
   wire io_wr;
 
-  reg resetq = 1'b0;
-  always @(posedge fclk)
-    resetq <= 1'b1;
+  wire resetq = DTR;
 
   j1 _j1 (
      .clk(fclk),
@@ -109,7 +109,7 @@ module top(
      .mem_wr(mem_wr),
      .mem_din(mem_din),
      .dout(dout),
-     .io_din({16'd0, uart0_data, 5'd0, uart0_valid, uart0_busy, DUO_SW1}),
+     .io_din({16'd0, uart0_data, 4'd0, DTR, uart0_valid, uart0_busy, DUO_SW1}),
 
      .code_addr(code_addr),
      .insn(insn)
@@ -117,10 +117,10 @@ module top(
 
   ram16k ram(.clk(fclk),
              .a_addr(mem_addr),
-             .a_q(mem_din[15:0]),
+             .a_q(mem_din),
              .a_wr(mem_wr),
-             .a_d(dout[15:0]),
-             .b_addr(code_addr[12:0]),
+             .a_d(dout),
+             .b_addr(code_addr),
              .b_q(insn));
 
   reg io_wr_;

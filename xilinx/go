@@ -2,6 +2,7 @@ set -e
 cd ../toolchain
 sh go
 cd ../xilinx
+make clean
 make
 if false
 then

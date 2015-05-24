@@ -269,7 +269,7 @@ meta
 
 decimal
 0 value file
-: dumpall
+: dumpall.16
     s" hex" out-suffix to file
 
     hex
@@ -279,7 +279,17 @@ decimal
     loop
     file close-file
 ;
+: dumpall.32
+    s" hex" out-suffix to file
 
-dumpall
+    hex
+    4096 0 do
+        tflash i 4 * + @
+        s>d <# # # # # # # # # #> file write-line throw
+    loop
+    file close-file
+;
+
+dumpall.32
 
 bye
