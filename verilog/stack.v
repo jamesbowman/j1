@@ -1,5 +1,4 @@
-`default_nettype none
-`define WIDTH 16
+`include "common.h"
 
 module stack( 
   input wire clk,

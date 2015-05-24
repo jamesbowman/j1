@@ -79,7 +79,7 @@ module uart(
 
       if (sending & ser_clk) begin
         { shifter, uart_tx } <= { 1'b1, shifter };
-        bitcount <= bitcount - 1;
+        bitcount <= bitcount - 4'd1;
       end
     end
   end
@@ -122,7 +122,7 @@ module rxuart(
     if (startbit)
       bitcountN = 0;
     else if (!idle & !valid & ser_clk)
-      bitcountN = bitcount + 1;
+      bitcountN = bitcount + 5'd1;
     else if (valid & rd)
       bitcountN = 5'b11111;
     else

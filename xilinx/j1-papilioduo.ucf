@@ -33,7 +33,7 @@ TIMESPEC TS_Period_1 = PERIOD "CLK" 31.25 ns HIGH 50%;
 NET TXD       LOC="P141" | IOSTANDARD=LVTTL | DRIVE=8 | SLEW=FAST;
 NET RXD       LOC="P46" | IOSTANDARD=LVTTL | DRIVE=8 | SLEW=FAST;
 
-NET "fclk" PERIOD = 6 ns HIGH 50%;
+// NET "fclk" PERIOD = 6 ns HIGH 50%;
 
 # 
 # NET Arduino_0          LOC="P116" | IOSTANDARD=LVTTL;                                # A0

@@ -9,11 +9,11 @@ module ram16k(
   input  wire[15:0] a_d,
   input  wire       a_wr,
 
-  input  wire[13:0] b_addr,
+  input  wire[12:0] b_addr,
   output wire[15:0] b_q);
 
   //synthesis attribute ram_style of mem is block
-  reg    [15:0]  mem[0:1023]; //pragma attribute mem ram_block TRUE
+  reg    [15:0]  mem[0:8191]; //pragma attribute mem ram_block TRUE
   initial begin
     $readmemh("../build/firmware/demo0.hex", mem);
   end
@@ -25,12 +25,12 @@ module ram16k(
   reg    [15:0]  a_addr_;
   always @ (posedge clk)
     a_addr_  <= a_addr;
-  assign a_q = mem[a_addr_[10:1]];
+  assign a_q = mem[a_addr_[13:1]];
 
-  reg    [13:0]  raddr_reg;
+  reg    [12:0]  raddr_reg;
   always @ (posedge clk)
     raddr_reg  <= b_addr;
-  assign b_q = mem[raddr_reg[9:0]];
+  assign b_q = mem[raddr_reg];
 endmodule
 
 module top(
@@ -40,7 +40,7 @@ module top(
   input  wire RXD,
   output wire TXD
   );
-  localparam MHZ = 200;
+  localparam MHZ = 40;
 
   wire fclk;
 
@@ -87,9 +87,9 @@ module top(
      .rx_data(uart0_data));
 
   wire [15:0] mem_addr;
-  wire [15:0] mem_din;
+  wire [31:0] mem_din;
   wire mem_wr;
-  wire [15:0] dout;
+  wire [31:0] dout;
 
   wire [12:0] code_addr;
   wire [15:0] insn;
@@ -109,7 +109,7 @@ module top(
      .mem_wr(mem_wr),
      .mem_din(mem_din),
      .dout(dout),
-     .io_din({uart0_data, 5'd0, uart0_valid, uart0_busy, DUO_SW1}),
+     .io_din({16'd0, uart0_data, 5'd0, uart0_valid, uart0_busy, DUO_SW1}),
 
      .code_addr(code_addr),
      .insn(insn)
@@ -117,14 +117,15 @@ module top(
 
   ram16k ram(.clk(fclk),
              .a_addr(mem_addr),
-             .a_q(mem_din),
+             .a_q(mem_din[15:0]),
              .a_wr(mem_wr),
-             .a_d(dout),
-             .b_addr(code_addr[9:0]),
+             .a_d(dout[15:0]),
+             .b_addr(code_addr[12:0]),
              .b_q(insn));
 
   reg io_wr_;
-  reg [15:0] mem_addr_, dout_;
+  reg [15:0] mem_addr_;
+  reg [31:0] dout_;
   always @(posedge fclk)
     {io_wr_, mem_addr_, dout_} <= {io_wr, mem_addr, dout};
 

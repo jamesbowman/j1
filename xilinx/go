@@ -3,8 +3,14 @@ cd ../toolchain
 sh go
 cd ../xilinx
 make
-cp ../build/firmware/demo0.hex ../build/firmware/demo0.mem
-data2mem -bm j1-papilioduo_bd.bmm -bd ../build/firmware/demo0.mem -bt j1-papilioduo.bit
-trce -v 10 j1-papilioduo.ncd j1-papilioduo.pcf  -o j1-papilioduo.twr
-$HOME/Downloads/DesignLab-1.0.5/tools/Papilio_Loader/programmer/linux32/papilio-prog -v -f j1-papilioduo_rp.bit
+if false
+then
+  cp ../build/firmware/demo0.hex ../build/firmware/demo0.mem
+  data2mem -bm j1-papilioduo_bd.bmm -bd ../build/firmware/demo0.mem -bt j1-papilioduo.bit
+  trce -v 10 j1-papilioduo.ncd j1-papilioduo.pcf  -o j1-papilioduo.twr
+  DL=j1-papilioduo_rp.bit
+else
+  DL=j1-papilioduo.bit
+fi
+$HOME/Downloads/DesignLab-1.0.5/tools/Papilio_Loader/programmer/linux32/papilio-prog -v -f $DL
 # miniterm.py /dev/ttyUSB0 115200

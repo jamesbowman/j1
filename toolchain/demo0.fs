@@ -10,6 +10,23 @@ header 0>       : 0>        d# 0 > ;
 header 0<>      : 0<>       d# 0 <> ;
 header u>       : u>        swap u< ; 
 
+: eol   ( u -- u' false | true )
+    d# -1 +
+    dup 0= dup if
+                        ( 0 true -- )
+        nip
+    then
+;
+
+header ms
+: ms
+    begin
+        d# 15000 begin
+        eol until
+    eol until
+;
+
+
 header key?
 : key?
     d# 0 io@
@@ -26,13 +43,15 @@ header key
     d# 0 d# 2 io!
 ;
 
+: ready
+    d# 0 io@
+    d# 2 and
+    0=
+;
+
 header emit
 : emit
-    begin
-        d# 0 io@
-        d# 2 and
-        0=
-    until
+    begin ready until
     h# 0 io!
 ;
 
@@ -77,22 +96,6 @@ header bl
 
 header .
 : . hex4 space ;
-
-: eol   ( u -- u' false | true )
-    d# -1 +
-    dup 0= dup if
-                        ( 0 true -- )
-        nip
-    then
-;
-
-header ms
-: ms
-    begin
-        d# 15000 begin
-        eol until
-    eol until
-;
 
 header true     : true   d# -1 ; 
 header rot      : rot   >r swap r> swap ; 
@@ -151,35 +154,35 @@ create ll 0 ,
 create dp 0 ,
 create tib 80 allot
 
-header words : words
-    ll @
-    begin
-        dup
-    while
-        cr
-        dup .
-        dup cell+
-        count type
-        space
-        @
-    repeat
-    drop
-;
-
-header dump : dump ( addr u -- )
-    cr over hex4
-    begin  ( addr u )
-        ?dup
-    while
-        over c@ space hex2
-        1- swap 1+   ( u' addr' )
-        dup h# f and 0= if  ( next line? )
-            cr dup hex4
-        then
-        swap
-    repeat
-    drop
-;
+\ header words : words
+\     ll @
+\     begin
+\         dup
+\     while
+\         cr
+\         dup .
+\         dup cell+
+\         count type
+\         space
+\         @
+\     repeat
+\     drop
+\ ;
+\ 
+\ header dump : dump ( addr u -- )
+\     cr over hex4
+\     begin  ( addr u )
+\         ?dup
+\     while
+\         over c@ space hex2
+\         1- swap 1+   ( u' addr' )
+\         dup h# f and 0= if  ( next line? )
+\             cr dup hex4
+\         then
+\         swap
+\     repeat
+\     drop
+\ ;
 
 header negate   : negate    invert 1+ ; 
 header -        : -         negate + ; 
@@ -257,7 +260,6 @@ header accept
     begin again
 ;
 
-
 : digit? ( c -- u f )
    dup h# 39 > h# 100 and +
    dup h# 140 > h# 107 and - h# 30 -
@@ -327,6 +329,18 @@ header lshift   :noname     lshift   ;
         d# 1 ms
         [char] - emit
     eol until
+
+    \ words
+
+    cr cr cr
+    h# 947 begin
+        cr dup hex8
+        2*
+        dup 0=
+    until
+    cr
+
+    begin again
 
     begin key? while key drop repeat
 

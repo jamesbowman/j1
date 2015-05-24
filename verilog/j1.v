@@ -5,7 +5,7 @@ module j1(
    input wire resetq,
 
    output wire io_wr,
-   output wire [`WIDTH-1:0] mem_addr,
+   output wire [15:0] mem_addr,
    output wire mem_wr,
    output wire [`WIDTH-1:0] dout,
    input  wire [`WIDTH-1:0] mem_din,
@@ -28,7 +28,7 @@ module j1(
   reg reboot = 1;
   wire [12:0] pc_plus_1 = pc + 1;
 
-  assign mem_addr = st0N;
+  assign mem_addr = st0N[15:0];
   assign code_addr = {pcN};
 
   // The D and R stacks
@@ -40,7 +40,7 @@ module j1(
   begin
     // Compute the new value of st0
     casez ({insn[15:8]})
-      8'b1??_?????: st0N = { 1'b0, insn[14:0] };    // literal
+      8'b1??_?????: st0N = { {(`WIDTH - 15){1'b0}}, insn[14:0] };    // literal
       8'b000_?????: st0N = st0;                     // jump
       8'b010_?????: st0N = st0;                     // call
       8'b001_?????: st0N = st1;                     // conditional jump
@@ -51,15 +51,15 @@ module j1(
       8'b011_?0100: st0N = st0 | st1;
       8'b011_?0101: st0N = st0 ^ st1;
       8'b011_?0110: st0N = ~st0;
-      8'b011_?0111: st0N = {16{(st1 == st0)}};
-      8'b011_?1000: st0N = {16{($signed(st1) < $signed(st0))}};
-      8'b011_?1001: st0N = st1 >> st0[3:0];
-      8'b011_?1010: st0N = st1 << st0[3:0];
+      8'b011_?0111: st0N = {`WIDTH{(st1 == st0)}};
+      8'b011_?1000: st0N = {`WIDTH{($signed(st1) < $signed(st0))}};
+      8'b011_?1001: st0N = st1 >> st0[4:0];
+      8'b011_?1010: st0N = st1 << st0[4:0];
       8'b011_?1011: st0N = rst0;
       8'b011_?1100: st0N = mem_din;
       8'b011_?1101: st0N = io_din;
-      8'b011_?1110: st0N = {8'd0, rsp, dsp};
-      8'b011_?1111: st0N = {16{(st1 < st0)}};
+      8'b011_?1110: st0N = {{(`WIDTH - 8){1'b0}}, rsp, dsp};
+      8'b011_?1111: st0N = {`WIDTH{(st1 < st0)}};
       default: st0N = {`WIDTH{1'bx}};
     endcase
   end
@@ -74,7 +74,7 @@ module j1(
   assign dout = st1;
   assign io_wr = !reboot & is_alu & func_iow;
 
-  assign rstkD = (insn[13] == 1'b0) ? {2'b00, pc_plus_1, 1'b0} : st0;
+  assign rstkD = (insn[13] == 1'b0) ? {{(`WIDTH - 14){1'b0}}, pc_plus_1, 1'b0} : st0;
 
   reg [3:0] dspI, rspI;
   always @*

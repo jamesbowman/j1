@@ -10,9 +10,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-ADDRESS_SPACE j1 RAMB16 [0x00000000:0x000007FF]
-    BUS_BLOCK
-        ram/Mram_mem RAMB16 [15:0] [0:1023] PLACED = X0Y14;
-    END_BUS_BLOCK;
-END_ADDRESS_SPACE;
-
+// ADDRESS_SPACE j1 RAMB16 [0x00000000:0x00000FFF]
+//     BUS_BLOCK
+//         ram/Mram_mem RAMB16 [15:0] [0:1023] PLACED = X0Y14;
+//     END_BUS_BLOCK;
+// END_ADDRESS_SPACE;
