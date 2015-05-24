@@ -325,35 +325,27 @@ header lshift   :noname     lshift   ;
 \ 
 
 : main
+    cr d# 1 ms cr
     d# 60 begin
-        d# 1 ms
         [char] - emit
     eol until
 
     \ words
 
-    cr cr cr
-    h# 1947 begin
-        cr dup hex8
-        2*
-        dup 0=
-    until
-    cr
-
     cr d# 0 @ hex8
     cr d# 4 @ hex8
-    cr h# 3fc0 @ hex8
-    h# 947 h# 3fc0 !
-    cr h# 3fc0 @ hex8
+    cr h# 2000 @ hex8
+    h# 947 h# 2000 !
+    cr h# 2000 @ hex8
     cr
+
+    begin key? while key drop repeat
 
     begin
         d# 0 io@ cr hex8
         d# 100 ms
     again
     begin again
-
-    begin key? while key drop repeat
 
     begin
         cr
@@ -390,6 +382,11 @@ meta
 target
 
 : bootloader
+    begin
+        b.key d# 27 =
+    until
+    h# 40 emit
+
     b.32 d# 0
     begin
         2dupxor
@@ -397,6 +394,7 @@ target
         b.32 over !
         d# 4 +
     repeat
+    h# 41 emit
     d# 2 >r
 ;
 
