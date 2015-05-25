@@ -28,11 +28,14 @@ variable tdp    0 tdp !
 : islegal   ;
 : tc!       islegal tflash + c! ;
 : tc@       islegal tflash + c@ ;
-: t!        islegal over h# ff and over tc! swap 8 rshift swap 1+ tc! ;
-: t@        islegal dup tc@ swap 1+ tc@ 8 lshift or ;
-: talign    tdp @ tcell+ 1- tcell 1- invert and tdp ! ;
+: tw!       islegal tflash + w! ;
+: t!        islegal tflash + l! ;
+: t@        islegal tflash + uw@ ;
+: twalign   tdp @ 1+ -2 and tdp ! ;
+: talign    tdp @ 3 + -4 and tdp ! ;
 : tc,       there tc! 1 tdp +! ;
-: t,        there t! tcell tdp +! ;
+: t,        there t!  4 tdp +! ;
+: tw,       there tw! tcell tdp +! ;
 : org       tdp ! ;
 
 wordlist constant target-wordlist
@@ -61,7 +64,24 @@ warnings off
         h# ffff xor recurse
         ~T alu
     else
-        h# 8000 or t,
+        h# 8000 or tw,
+    then
+;
+
+: literal
+    dup $80000000 and if
+        invert recurse
+        ~T alu
+    else
+        dup $ffff8000 and if
+            dup $F rshift recurse
+            $f recurse
+            N<<T d-1 alu
+            $7fff and recurse
+            T|N d-1 alu
+        else
+            $8000 or tw,
+        then
     then
 ;
 
@@ -76,16 +96,16 @@ warnings off
 variable link 0 link !
 
 :: header
-    talign there
+    twalign there
     \ cr ." link is " link @ .
-    link @ t,
+    link @ tw,
     link !
     bl parse
     dup tc,
     bounds do
         i c@ tc,
     loop
-    talign
+    twalign
 ;
 
 :: :
@@ -103,6 +123,7 @@ variable link 0 link !
 ;
 
 :: ,
+    talign
     t,
 ;
 
@@ -115,11 +136,11 @@ variable link 0 link !
 : shortcut ( orig -- f ) \ insn @orig precedes ;. Shortcut it.
     \ call becomes jump
     dup t@ h# e000 and h# 4000 = if
-        dup t@ h# 1fff and over t!
+        dup t@ h# 1fff and over tw!
         true
     else
         dup t@ h# e00c and h# 6000 = if
-            dup t@ h# 0080 or r-1 over t!
+            dup t@ h# 0080 or r-1 over tw!
             true
         else
             false
@@ -141,12 +162,17 @@ variable link 0 link !
 ;
 :: ;fallthru ;
 
+:: jmp
+    ' >body @ ubranch
+;
+
 :: constant
     create  ,
     does>   @ literal
 ;
 
 :: create
+    talign
     create there ,
     does>   @ literal
 ;
@@ -181,7 +207,7 @@ variable link 0 link !
         2drop drop literal
     else
         1 = swap c@ [char] . = and if
-            drop dup literal 16 rshift literal
+            drop dup literal 32 rshift literal
         else
             -1 abort" bad number"
         then
@@ -190,7 +216,7 @@ warnings on
 
 :: d# bl parse 10 base>number ;
 :: h# bl parse 16 base>number ;
-:: ['] ' >body @ literal ;
+:: ['] ' >body @ 2* literal ;
 :: [char] char literal ;
 
 :: asm-0branch
@@ -202,7 +228,7 @@ warnings on
 
 : resolve ( orig -- )
     there over tbranches ! \ forward reference from orig to this loc
-    dup t@ there 2/ or swap t!
+    dup t@ there 2/ or swap tw!
 ;
 
 :: if

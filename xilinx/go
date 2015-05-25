@@ -3,7 +3,7 @@ cd ../toolchain
 sh go
 cd ../xilinx
 
-# $HOME/Downloads/DesignLab-1.0.5/tools/Papilio_Loader/programmer/linux32/papilio-prog -v -f j1-papilioduo.bit
+$HOME/Downloads/DesignLab-1.0.5/tools/Papilio_Loader/programmer/linux32/papilio-prog -v -f j1-papilioduo.bit
 python shell.py -h /dev/ttyUSB2 -i ../build/firmware/demo0.hex ; exit
 
 make clean
@@ -18,4 +18,5 @@ else
   DL=j1-papilioduo.bit
 fi
 $HOME/Downloads/DesignLab-1.0.5/tools/Papilio_Loader/programmer/linux32/papilio-prog -v -f $DL
+python shell.py -h /dev/ttyUSB2 -i ../build/firmware/demo0.hex ; exit
 # miniterm.py /dev/ttyUSB0 115200

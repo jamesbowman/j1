@@ -29,11 +29,11 @@
 : r-2       h# 0008 or ;
 : r+1       h# 0004 or ;
 
-: imm       h# 8000 or t, ;
-: alu       h# 6000 or t, ;
-: ubranch   h# 0000 or t, ;
-: 0branch   h# 2000 or t, ;
-: scall     h# 4000 or t, ;
+: imm       h# 8000 or tw, ;
+: alu       h# 6000 or tw, ;
+: ubranch   h# 0000 or tw, ;
+: 0branch   h# 2000 or tw, ;
+: scall     h# 4000 or tw, ;
 
 
 :: noop      T                       alu ;
