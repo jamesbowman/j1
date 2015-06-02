@@ -15,14 +15,14 @@ module j1(
    output wire [12:0] code_addr,
    input  wire [15:0] insn
    );
-  reg [3:0] dsp;      // Data stack pointer
-  reg [3:0] dspN;
+  reg [`DEPTH-1:0] dsp;      // Data stack pointer
+  reg [`DEPTH-1:0] dspN;
   reg [`WIDTH-1:0] st0;     // Top of data stack
   reg [`WIDTH-1:0] st0N;
   reg dstkW;         // D stack write
 
   reg [12:0] pc, pcN;      
-  reg [3:0] rsp, rspN;
+  reg [`DEPTH-1:0] rsp, rspN;
   reg rstkW;          // R stack write
   wire [`WIDTH-1:0] rstkD;   // R stack write value
   reg reboot = 1;
@@ -33,8 +33,9 @@ module j1(
 
   // The D and R stacks
   wire [`WIDTH-1:0] st1, rst0;
-  stack dstack(.clk(clk), .resetq(resetq), .ra(dsp), .rd(st1), .we(dstkW), .wa(dspN), .wd(st0));
-  stack rstack(.clk(clk), .resetq(resetq), .ra(rsp), .rd(rst0), .we(rstkW), .wa(rspN), .wd(rstkD));
+  stack #(.DEPTH(`DEPTH))
+   dstack(.clk(clk), .resetq(resetq), .ra(dsp), .rd(st1), .we(dstkW), .wa(dspN), .wd(st0));
+  stack #(.DEPTH(`DEPTH))rstack(.clk(clk), .resetq(resetq), .ra(rsp), .rd(rst0), .we(rstkW), .wa(rspN), .wd(rstkD));
 
   always @*
   begin
@@ -53,8 +54,13 @@ module j1(
       8'b011_?0110: st0N = ~st0;
       8'b011_?0111: st0N = {`WIDTH{(st1 == st0)}};
       8'b011_?1000: st0N = {`WIDTH{($signed(st1) < $signed(st0))}};
+`ifdef NOSHIFTER // `define NOSHIFTER in common.h to cut slice usage in half and shift by 1 only
+      8'b011_?1001: st0N = st1 >> 1;
+      8'b011_?1010: st0N = st1 << 1;
+`else      // otherwise shift by 1-any number of bits
       8'b011_?1001: st0N = st1 >> st0[4:0];
       8'b011_?1010: st0N = st1 << st0[4:0];
+`endif
       8'b011_?1011: st0N = rst0;
       8'b011_?1100: st0N = mem_din;
       8'b011_?1101: st0N = io_din;
@@ -76,7 +82,7 @@ module j1(
 
   assign rstkD = (insn[13] == 1'b0) ? {{(`WIDTH - 14){1'b0}}, pc_plus_1, 1'b0} : st0;
 
-  reg [3:0] dspI, rspI;
+  reg [`DEPTH-1:0] dspI, rspI;
   always @*
   begin
     casez ({insn[15:13]})
