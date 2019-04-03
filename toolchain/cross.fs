@@ -153,7 +153,7 @@ variable link 0 link !
     there 2 - shortcut      \ true if shortcut applied
     there 0 do
         i tbranches @ there = if
-            i tbranches @ shortcut and
+            i shortcut and
         then
     loop
     0= if   \ not all shortcuts worked
