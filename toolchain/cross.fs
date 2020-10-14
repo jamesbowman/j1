@@ -19,7 +19,7 @@ variable lst        \ .lst output file handle
 
 131072 allocate throw constant tflash       \ bytes, target flash
 131072 allocate throw constant _tbranches   \ branch targets, cells
-tflash      31072 0 fill
+tflash      131072 0 fill
 _tbranches  131072 0 fill
 : tbranches cells _tbranches + ;
 
@@ -108,15 +108,31 @@ variable link 0 link !
     twalign
 ;
 
+:: header-imm
+    twalign there
+    link @ 1+ tw,
+    link !
+    bl parse
+    dup tc,
+    bounds do
+        i c@ tc,
+    loop
+    twalign
+;
+
+variable wordstart
+
 :: :
     hex
-    codeptr s>d
+    there s>d
     <# bl hold # # # # #>
     lst @ write-file throw
     wordstr lst @ write-line throw
 
+    there wordstart !
     create  codeptr ,
     does>   @ scall
+
 ;
 
 :: :noname
@@ -150,16 +166,21 @@ variable link 0 link !
 ;
 
 :: ;
-    there 2 - shortcut      \ true if shortcut applied
-    there 0 do
-        i tbranches @ there = if
-            i tbranches @ shortcut and
-        then
-    loop
-    0= if   \ not all shortcuts worked
+    there wordstart @ = if
         s" exit" evaluate
+    else
+        there 2 - shortcut \ true if shortcut applied
+        there 0 do
+            i tbranches @ there = if
+                i tbranches @ shortcut and
+            then
+        loop
+        0= if   \ not all shortcuts worked
+            s" exit" evaluate
+        then
     then
 ;
+
 :: ;fallthru ;
 
 :: jmp
