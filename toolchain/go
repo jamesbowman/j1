@@ -1,3 +1,5 @@
 set -e
+
+mkdir -p ../build/firmware/
 gforth cross.fs basewords.fs nuc.fs
 # python dump.py ../build/firmware/demo0.hex
